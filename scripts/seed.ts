@@ -15,9 +15,14 @@ async function seed() {
 
   const db = drizzle(sqlite, { schema });
 
-  // Run migrations first
-  console.log('Running migrations...');
-  migrate(db, { migrationsFolder: './drizzle' });
+  // Run migrations only if tables don't exist yet
+  const tableCount = sqlite.prepare("SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='users'").get() as any;
+  if (tableCount.c === 0) {
+    console.log('Running migrations...');
+    migrate(db, { migrationsFolder: './drizzle' });
+  } else {
+    console.log('Tables already exist, skipping migrations.');
+  }
 
   const { users, dishes, dishIngredients, announcements } = schema;
 

@@ -12,7 +12,7 @@ services:
       - DATABASE_PATH=/app/data/family-menu.db
       - ADMIN_SEED_PASSWORD=${ADMIN_SEED_PASSWORD:-admin123}
     volumes:
-      - family-menu-data:/app/data
+      - ./data:/app/data
     deploy:
       resources:
         limits:
@@ -32,5 +32,3 @@ services:
         max-size: "10m"
         max-file: "3"
 
-volumes:
-  family-menu-data:

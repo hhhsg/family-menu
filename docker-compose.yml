@@ -9,6 +9,8 @@ services:
       - NODE_ENV=production
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
+      - AUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
+      - AUTH_TRUST_HOST=true
       - DATABASE_PATH=/app/data/family-menu.db
       - ADMIN_SEED_PASSWORD=${ADMIN_SEED_PASSWORD:-admin123}
     volumes:

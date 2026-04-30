@@ -1,42 +1,39 @@
-import { auth } from '@/auth/auth.config';
+import { getSession } from '@/auth/auth';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/login', '/api/auth'];
+const publicPaths = ['/login', '/api/auth', '/api/health'];
 
-export const proxy = auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  // Allow public paths
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
-    if (isLoggedIn && pathname === '/login') {
-      return NextResponse.redirect(new URL('/menu', req.url));
-    }
-    return NextResponse.next();
-  }
-
-  // Allow static files and API health check
+  // Allow public paths, static files, and assets
   if (
+    publicPaths.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/health') ||
     pathname.startsWith('/manifest') ||
-    pathname.startsWith('/icons')
+    pathname.startsWith('/icons') ||
+    pathname.startsWith('/sw.js')
   ) {
     return NextResponse.next();
   }
 
+  // Check auth for protected routes
+  const session = await getSession();
+  const isLoggedIn = !!session?.user;
+
   // Redirect unauthenticated users to login
   if (!isLoggedIn) {
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const permissions = req.auth.user?.permissions as string[] | undefined;
+  const permissions = (session.user as any).permissions as string[] | undefined;
 
   // Admin routes: check specific permissions
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin') {
-      const hasAny = permissions && permissions.some((p) => p.includes('edit') || p.includes('manage'));
-      if (!hasAny) return NextResponse.redirect(new URL('/menu', req.url));
+      const hasAny = permissions && permissions.some((p: string) => p.includes('edit') || p.includes('manage'));
+      if (!hasAny) return NextResponse.redirect(new URL('/menu', request.url));
       return NextResponse.next();
     }
 
@@ -56,7 +53,7 @@ export const proxy = auth((req) => {
     for (const [_path, perm] of Object.entries(permissionMap)) {
       if (pathname.startsWith(_path)) {
         if (!permissions?.includes(perm)) {
-          return NextResponse.redirect(new URL('/menu', req.url));
+          return NextResponse.redirect(new URL('/menu', request.url));
         }
         break;
       }
@@ -64,7 +61,7 @@ export const proxy = auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|sw.js).*)'],

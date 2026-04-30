@@ -65,6 +65,13 @@ export default function AdminUsersPage() {
     handleUpdateUser(user.id, { is_active: !user.is_active });
   };
 
+  const handleDelete = async (user: any) => {
+    if (!confirm(`确定永久删除用户「${user.nickname || user.username}」吗？此操作不可撤销。`)) return;
+    const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+    if (res.ok) { toast.success('已删除'); fetchUsers(); }
+    else { const d = await res.json(); toast.error(d.message || '删除失败'); }
+  };
+
   const applyPreset = (user: any, presetName: string) => {
     const perms = PERMISSION_PRESETS[presetName] || [];
     handleUpdateUser(user.id, { permissions: perms });
@@ -141,6 +148,9 @@ export default function AdminUsersPage() {
                     <button onClick={() => handleResetPassword(user.id)} className="px-3 h-7 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg">重置</button>
                     <button onClick={() => handleToggleActive(user)} className={`px-3 h-7 text-xs rounded-lg ${user.is_active ? 'bg-red-50 dark:bg-red-950 text-red-600' : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600'}`}>
                       {user.is_active ? '禁用' : '启用'}
+                    </button>
+                    <button onClick={() => handleDelete(user)} className="px-3 h-7 text-xs bg-red-500 text-white rounded-lg">
+                      删除
                     </button>
                   </>
                 )}

@@ -48,7 +48,13 @@ export async function DELETE(
   if (!user) return errorResponse('用户不存在', 404);
   if (user.role === 'admin') return errorResponse('不能删除管理员', 403);
 
-  db.prepare('UPDATE users SET is_active = 0 WHERE id = ?').run(parseInt(id));
+  // Delete related data first, then the user
+  db.prepare('DELETE FROM dish_ratings WHERE user_id = ?').run(parseInt(id));
+  db.prepare('DELETE FROM orders WHERE user_id = ?').run(parseInt(id));
+  db.prepare('DELETE FROM cooking_duties WHERE user_id = ?').run(parseInt(id));
+  db.prepare('DELETE FROM expenses WHERE paid_by = ?').run(parseInt(id));
+  db.prepare('DELETE FROM push_subscriptions WHERE user_id = ?').run(parseInt(id));
+  db.prepare('DELETE FROM users WHERE id = ?').run(parseInt(id));
   return successResponse(null);
 }
 
